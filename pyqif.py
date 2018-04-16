@@ -21,7 +21,8 @@ DEFAULT_CONFIG = {
     'tail': '1',  # Discard first X number of lines from the input.
     'decimal': '.',
     'in_date': '%d/%m/%Y',
-    'out_date': '%Y-%m-%d'
+    'out_date': '%Y-%m-%d',
+    'c': 'R',  # Set all transactions as reconciled by default.
 }
 
 

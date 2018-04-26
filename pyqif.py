@@ -13,19 +13,6 @@ import csv
 logging.basicConfig(level=logging.WARN)
 LOGGER = logging.getLogger(__name__)
 
-# Default configuration.
-DEFAULT_CONFIG = {
-    'type': 'Bank',
-    'encoding': 'utf-8',
-    'separator': ',',
-    'header_len': '1',  # Discard first X number of lines from the input.
-    'decimal': '.',
-    'date': {
-        'in': '%d/%m/%Y',
-        'out': '%Y-%m-%d',
-    }
-}
-
 
 class ExpandPathAction(argparse.Action):
     """

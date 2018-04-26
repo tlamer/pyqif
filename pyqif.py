@@ -6,7 +6,7 @@ import os
 import sys
 import logging
 import argparse
-import configparser
+import yaml
 import datetime
 import csv
 
@@ -18,11 +18,12 @@ DEFAULT_CONFIG = {
     'type': 'Bank',
     'encoding': 'utf-8',
     'separator': ',',
-    'tail': '1',  # Discard first X number of lines from the input.
+    'header_len': '1',  # Discard first X number of lines from the input.
     'decimal': '.',
-    'in_date': '%d/%m/%Y',
-    'out_date': '%Y-%m-%d',
-    'c': 'R',  # Set all transactions as reconciled by default.
+    'date': {
+        'in': '%d/%m/%Y',
+        'out': '%Y-%m-%d',
+    }
 }
 
 
@@ -38,6 +39,15 @@ class ExpandPathAction(argparse.Action):
 
     def __call__(self, parser, namespace, values, option_string=None):
         setattr(namespace, self.dest, os.path.expanduser(values))
+
+
+def parse_account_config(source, account):
+    """
+    Parse configuration file and apply defaults.
+    """
+    cfg = yaml.load(source)
+
+    return cfg[account]
 
 
 def arg_parser():
@@ -94,15 +104,14 @@ def process_entry(data, cfg):
     Process csv entry.
     """
     result = ""
-    items = {
-        item.upper(): cfg.getint(item) - 1
-        for item in cfg.keys() if len(item) <= 2
-    }
+    items = cfg['items']
 
     for item, position in items.items():
+        position -= 1
+
         if item == "D":
-            date = process_date(data[position], cfg['in_date'],
-                                cfg['out_date'])
+            date = process_date(data[position], cfg['date']['in'],
+                                cfg['date']['out'])
             result += item + date + "\n"
         else:
             result += item + data[position] + "\n"
@@ -110,6 +119,19 @@ def process_entry(data, cfg):
     result += "^\n"
 
     return result
+
+
+def process_header(header, cfg):
+    """
+    Find the position of items from header.
+    """
+    for key, value in cfg['items'].items():
+        if value in header:
+            cfg['items'][key] = header.index(value) + 1
+
+    LOGGER.debug('Configuration with parsed header %s', cfg)
+
+    return cfg
 
 
 def main():
@@ -126,33 +148,33 @@ def main():
             args.config)
         sys.exit(1)
 
-    cfg = configparser.RawConfigParser()
+    with open(args.config) as cfg_file:
+        account = parse_account_config(cfg_file, args.account)
 
-    # Apply configuration defaults and read the config.
-    for option, item in DEFAULT_CONFIG.items():
-        cfg['DEFAULT'][option] = item
-    cfg.read(args.config)
+    LOGGER.debug('Account configuration: %s', account)
 
-    account = cfg[args.account]
-
-    # Check if there are necessary sections in the config file.
-    if args.account not in cfg.sections():
-        LOGGER.warning("'%s' section is missing in configuration file.",
-                       args.account)
-        sys.exit(2)
+    # Sanity checks.
+    if 'items' not in account.keys():
+        LOGGER.error('No detail item specified in the configuration.')
+        sys.exit(3)
 
     if args.output is None:
         output = sys.stdout
     else:
         output = open(args.output, 'wt')
 
-    output.write(gen_header(args.account, account['type']))
+    try:
+        output.write(gen_header(args.account, account['type']))
+    except KeyError:
+        LOGGER.critical('Account type is not specified in configuration.')
+        sys.exit(2)
 
     # Process the data.
     with open(args.input, newline='', encoding=account['encoding']) as csvf:
-        for indice, data in enumerate(csv.reader(csvf)):
-            if indice < account.getint('tail'):
-                continue
+        source = csv.reader(csvf)
+        account = process_header(source.__next__(), account)
+
+        for data in source:
             output.write(process_entry(data, account))
 
 

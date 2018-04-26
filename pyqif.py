@@ -13,6 +13,12 @@ import csv
 logging.basicConfig(level=logging.WARN)
 LOGGER = logging.getLogger(__name__)
 
+# Default configuration.
+DEFAULT_CONFIG = {
+    'type': 'Bank',
+    'encoding': 'utf-8',
+}
+
 
 class ExpandPathAction(argparse.Action):
     """
@@ -28,13 +34,13 @@ class ExpandPathAction(argparse.Action):
         setattr(namespace, self.dest, os.path.expanduser(values))
 
 
-def parse_account_config(source, account):
+def parse_account_config(source, account, defaults):
     """
     Parse configuration file and apply defaults.
     """
     cfg = yaml.load(source)
 
-    return cfg[account]
+    return {**defaults, **cfg[account]}
 
 
 def arg_parser():
@@ -136,7 +142,7 @@ def main():
         sys.exit(1)
 
     with open(args.config) as cfg_file:
-        account = parse_account_config(cfg_file, args.account)
+        account = parse_account_config(cfg_file, args.account, DEFAULT_CONFIG)
 
     LOGGER.debug('Account configuration: %s', account)
 

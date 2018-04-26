@@ -17,6 +17,8 @@ LOGGER = logging.getLogger(__name__)
 DEFAULT_CONFIG = {
     'type': 'Bank',
     'encoding': 'utf-8',
+    'date_output': '%Y-%m-%d',
+    'delimiter': ','
 }
 
 
@@ -103,10 +105,10 @@ def process_entry(data, cfg):
         position -= 1
 
         if item == "D":
-            date = process_date(data[position], cfg['date']['in'],
-                                cfg['date']['out'])
+            date = process_date(data[position], cfg['date_input'],
+                                cfg['date_output'])
             result += item + date + "\n"
-        else:
+        elif data[position] is not '':
             result += item + data[position] + "\n"
 
     result += "^\n"
@@ -119,8 +121,12 @@ def process_header(header, cfg):
     Find the position of items from header.
     """
     for key, value in cfg['items'].items():
-        if value in header:
-            cfg['items'][key] = header.index(value) + 1
+        if isinstance(value, str):
+            try:
+                cfg['items'][key] = header.index(value) + 1
+            except ValueError as err:
+                LOGGER.error(err)
+                sys.exit(4)
 
     LOGGER.debug('Configuration with parsed header %s', cfg)
 
@@ -164,7 +170,7 @@ def main():
 
     # Process the data.
     with open(args.input, newline='', encoding=account['encoding']) as csvf:
-        source = csv.reader(csvf)
+        source = csv.reader(csvf, delimiter=account['delimiter'])
         account = process_header(source.__next__(), account)
 
         for data in source:

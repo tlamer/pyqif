@@ -3,6 +3,7 @@
 Tool for converting csv to qif format.
 """
 import os
+import re
 import sys
 import logging
 import argparse
@@ -100,14 +101,36 @@ def process_entry(data, cfg):
     """
     result = ""
     items = cfg['items']
+    subs = {}
+
+    # Compile regular expresinos for substitutions.
+    for item in cfg['substitutions']:
+        subs.update({
+            item: {
+                re.compile(pattern): sub
+                for pattern, sub in cfg['substitutions'][item].items()
+            }
+        })
+
+    LOGGER.debug('Substitutions: %s', subs)
 
     for item, position in items.items():
         position -= 1
 
+        # Process date.
         if item == "D":
             date = process_date(data[position], cfg['date_input'],
                                 cfg['date_output'])
             result += item + date + "\n"
+
+        # Substitute.
+        elif item in cfg['substitutions'].keys():
+            for pattern, sub in subs[item].items():
+                repl, count = re.subn(pattern, sub, data[position])
+                if count > 0:
+                    result += item + repl + '\n'
+
+        # Add value if not empty.
         elif data[position] is not '':
             result += item + data[position] + "\n"
 

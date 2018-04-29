@@ -53,7 +53,12 @@ myaccount:
             'payee': {
                 'foo': 'bar'
             }
-        }
+        },
+        'date_output': '%Y-%m-%d',
+        'delimiter': ',',
+        'encoding': 'utf-8',
+        'type': 'Bank'
     }
 
-    assert conf_object == pyqif.parse_account_config(conf_string, 'myaccount')
+    assert conf_object == pyqif.parse_account_config(conf_string, 'myaccount',
+                                                     pyqif.DEFAULT_CONFIG)

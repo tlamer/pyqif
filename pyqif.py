@@ -101,18 +101,6 @@ def process_entry(data, cfg):
     """
     result = ""
     items = cfg['items']
-    subs = {}
-
-    # Compile regular expresinos for substitutions.
-    for item in cfg['substitutions']:
-        subs.update({
-            item: {
-                re.compile(pattern): sub
-                for pattern, sub in cfg['substitutions'][item].items()
-            }
-        })
-
-    LOGGER.debug('Substitutions: %s', subs)
 
     for item, position in items.items():
         position -= 1
@@ -125,7 +113,7 @@ def process_entry(data, cfg):
 
         # Substitute.
         elif item in cfg['substitutions'].keys():
-            for pattern, sub in subs[item].items():
+            for pattern, sub in cfg['substitutions'][item].items():
                 repl, count = re.subn(pattern, sub, data[position])
                 if count > 0:
                     result += item + repl + '\n'

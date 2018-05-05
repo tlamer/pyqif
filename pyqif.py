@@ -168,6 +168,10 @@ def main():
         LOGGER.error('No detail item specified in the configuration.')
         sys.exit(3)
 
+    if 'substitutions' not in account.keys():
+        LOGGER.debug('No subtitutions in the config. Add empty item.')
+        account['substitutions'] = {}
+
     if args.output is None:
         output = sys.stdout
     else:

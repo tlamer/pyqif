@@ -114,7 +114,8 @@ def process_entry(data, cfg):
         # Substitute.
         elif item in cfg['substitutions'].keys():
             for pattern, sub in cfg['substitutions'][item].items():
-                repl, count = re.subn(pattern, sub, data[position])
+                repl, count = re.subn(
+                    pattern, sub, data[position], flags=re.IGNORECASE)
                 if count > 0:
                     result += item + repl + '\n'
 

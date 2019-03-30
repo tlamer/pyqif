@@ -41,7 +41,7 @@ def parse_account_config(source, account, defaults):
     """
     Parse configuration file and apply defaults.
     """
-    cfg = yaml.load(source)
+    cfg = yaml.load(source, Loader=yaml.SafeLoader)
 
     return {**defaults, **cfg[account]}
 

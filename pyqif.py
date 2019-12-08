@@ -120,7 +120,7 @@ def process_entry(data, cfg):
                     result += item + repl + '\n'
 
         # Add value if not empty.
-        elif data[position] is not '':
+        elif data[position] != '':
             result += item + data[position] + "\n"
 
     result += "^\n"
